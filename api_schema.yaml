@@ -1,213 +1,140 @@
 openapi: 3.0.3
 info:
-  title: Group Chat API (Source of Truth)
+  title: Frontend Integrated API Schema
   version: 1.0.0
-  description: |
-    This file describes the currently implemented API. It is the single source of truth for the frontend.
-    All protected endpoints use JWT in the Authorization header (Bearer <access_token>).
-servers:
-  - url: /
+  description: API schema used by React client. Paths reflect server implementation.
 paths:
-  /api/auth/register/:
-    post:
-      tags: [Auth]
-      summary: Register a new user and receive JWT tokens
-      description: Simple registration without email confirmation. Returns access and refresh tokens and the created user.
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RegisterRequest'
-            examples:
-              example1:
-                summary: Basic registration
-                value:
-                  username: alice
-                  password: pass1234
-                  email: alice@example.com
-      responses:
-        '201':
-          description: Registered successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthSuccess'
-              examples:
-                success:
-                  value:
-                    access: eyJhbGciOiJIUzI1NiIs...
-                    refresh: eyJhbGciOiJIUzI1NiIs...
-                    user:
-                      id: 1
-                      username: alice
-                      role: user
-                      date_joined: '2025-11-04T05:10:00Z'
-        '400':
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              examples:
-                username_taken:
-                  value:
-                    detail: Username already taken
-  /api/auth/login/:
-    post:
-      tags: [Auth]
-      summary: Login with username and password and receive JWT tokens
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LoginRequest'
-            examples:
-              example1:
-                value:
-                  username: alice
-                  password: pass1234
+  /api/hello/:
+    get:
+      summary: Hello message
       responses:
         '200':
-          description: Authenticated
+          description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthSuccess'
-              examples:
-                success:
-                  value:
-                    access: eyJhbGciOiJIUzI1NiIs...
-                    refresh: eyJhbGciOiJIUzI1NiIs...
-                    user:
-                      id: 1
-                      username: alice
-                      role: user
-                      date_joined: '2025-11-04T05:10:00Z'
-        '400':
-          description: Bad request
+                type: object
+                properties:
+                  message:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+  /api/auth/register/:
+    post:
+      summary: Register new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+                email:
+                  type: string
+              required: [username, password]
+      responses:
+        '201':
+          description: Created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-              examples:
-                missing_field:
-                  value:
-                    detail: Username and password are required
-        '401':
-          description: Invalid credentials
+                type: object
+                properties:
+                  access:
+                    type: string
+                  refresh:
+                    type: string
+                  user:
+                    type: object
+                    properties:
+                      id: { type: integer }
+                      username: { type: string }
+                      role: { type: string }
+                      date_joined: { type: string, format: date-time }
+  /api/auth/login/:
+    post:
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+              required: [username, password]
+      responses:
+        '200':
+          description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-              examples:
-                invalid:
-                  value:
-                    detail: No active account found with the given credentials
+                type: object
+                properties:
+                  access:
+                    type: string
+                  refresh:
+                    type: string
+                  user:
+                    type: object
+                    properties:
+                      id: { type: integer }
+                      username: { type: string }
+                      role: { type: string }
+                      date_joined: { type: string, format: date-time }
   /api/auth/me/:
     get:
-      tags: [Auth]
-      summary: Get current authenticated user
+      summary: Get current user
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: Current user info
+          description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
-              examples:
-                me:
-                  value:
-                    id: 1
-                    username: alice
-                    role: user
-                    date_joined: '2025-11-04T05:10:00Z'
+                type: object
+                properties:
+                  id: { type: integer }
+                  username: { type: string }
+                  role: { type: string }
+                  date_joined: { type: string, format: date-time }
         '401':
           description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              examples:
-                no_token:
-                  value:
-                    detail: Authentication credentials were not provided.
   /api/chat/messages/:
     get:
-      tags: [Chat]
-      summary: List recent chat messages
-      description: Returns messages in chronological order. Supports incremental fetching by id or timestamp.
+      summary: List chat messages
       security:
         - bearerAuth: []
       parameters:
         - name: limit
           in: query
-          description: Max messages to return. Default 50. Range 1..200.
-          required: false
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 200
-            default: 50
+          schema: { type: integer }
         - name: after_id
           in: query
-          description: Return messages with id greater than this value.
-          required: false
-          schema:
-            type: integer
+          schema: { type: integer }
         - name: after_ts
           in: query
-          description: Return messages created after this ISO-8601 timestamp.
-          required: false
-          schema:
-            type: string
-            format: date-time
+          schema: { type: string, format: date-time }
       responses:
         '200':
-          description: Array of chat messages
+          description: OK
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/ChatMessage'
-              examples:
-                sample:
-                  value:
-                    - id: 10
-                      author:
-                        id: 1
-                        username: alice
-                        role: user
-                        date_joined: '2025-11-04T05:10:00Z'
-                      content: Hi everyone!
-                      created_at: '2025-11-04T06:00:00Z'
-                    - id: 11
-                      author:
-                        id: 2
-                        username: bob
-                        role: moderator
-                        date_joined: '2025-11-03T09:00:00Z'
-                      content: Welcome to the chat.
-                      created_at: '2025-11-04T06:01:00Z'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              examples:
-                unauthorized:
-                  value:
-                    detail: Authentication credentials were not provided.
     post:
-      tags: [Chat]
-      summary: Create a new chat message
+      summary: Create message
       security:
         - bearerAuth: []
       requestBody:
@@ -215,188 +142,47 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ChatMessageCreate'
-            examples:
-              example1:
-                value:
-                  content: This is a new message
+              type: object
+              properties:
+                content:
+                  type: string
+              required: [content]
       responses:
         '201':
-          description: Message created
+          description: Created
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ChatMessage'
-              examples:
-                created:
-                  value:
-                    id: 12
-                    author:
-                      id: 1
-                      username: alice
-                      role: user
-                      date_joined: '2025-11-04T05:10:00Z'
-                    content: This is a new message
-                    created_at: '2025-11-04T06:02:00Z'
-        '400':
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              examples:
-                empty:
-                  value:
-                    detail: Message content cannot be empty
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              examples:
-                unauthorized:
-                  value:
-                    detail: Authentication credentials were not provided.
   /api/chat/messages/{id}/:
     delete:
-      tags: [Chat]
-      summary: Delete a chat message by id (admin or moderator only)
+      summary: Delete message (admin/moderator)
       security:
         - bearerAuth: []
       parameters:
         - name: id
           in: path
           required: true
-          schema:
-            type: integer
+          schema: { type: integer }
       responses:
         '204':
-          description: Deleted successfully. No content.
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              examples:
-                unauthorized:
-                  value:
-                    detail: Authentication credentials were not provided.
-        '403':
-          description: Forbidden - insufficient role
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              examples:
-                forbidden:
-                  value:
-                    detail: You do not have permission to perform this action.
-        '404':
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              examples:
-                not_found:
-                  value:
-                    detail: Not found.
+          description: No Content
 components:
-  schemas:
-    RegisterRequest:
-      type: object
-      required: [username, password]
-      additionalProperties: false
-      properties:
-        username:
-          type: string
-          minLength: 1
-          maxLength: 150
-        password:
-          type: string
-          minLength: 1
-        email:
-          type: string
-          format: email
-          nullable: true
-    LoginRequest:
-      type: object
-      required: [username, password]
-      additionalProperties: false
-      properties:
-        username:
-          type: string
-          minLength: 1
-        password:
-          type: string
-          minLength: 1
-    User:
-      type: object
-      additionalProperties: false
-      required: [id, username, role, date_joined]
-      properties:
-        id:
-          type: integer
-        username:
-          type: string
-        role:
-          type: string
-          enum: [admin, moderator, user]
-        date_joined:
-          type: string
-          format: date-time
-    ChatMessage:
-      type: object
-      additionalProperties: false
-      required: [id, author, content, created_at]
-      properties:
-        id:
-          type: integer
-        author:
-          $ref: '#/components/schemas/User'
-        content:
-          type: string
-          minLength: 1
-          maxLength: 2000
-        created_at:
-          type: string
-          format: date-time
-    ChatMessageCreate:
-      type: object
-      additionalProperties: false
-      required: [content]
-      properties:
-        content:
-          type: string
-          minLength: 1
-          maxLength: 2000
-    AuthSuccess:
-      type: object
-      additionalProperties: false
-      required: [access, refresh, user]
-      properties:
-        access:
-          type: string
-          description: JWT access token
-        refresh:
-          type: string
-          description: JWT refresh token
-        user:
-          $ref: '#/components/schemas/User'
-    Error:
-      type: object
-      additionalProperties: false
-      required: [detail]
-      properties:
-        detail:
-          type: string
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
-tags:
-  - name: Auth
-  - name: Chat
+  schemas:
+    ChatMessage:
+      type: object
+      properties:
+        id: { type: integer }
+        content: { type: string }
+        created_at: { type: string, format: date-time }
+        author:
+          type: object
+          properties:
+            id: { type: integer }
+            username: { type: string }
+            role: { type: string }
