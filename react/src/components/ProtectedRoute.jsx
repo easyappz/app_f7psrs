@@ -1,38 +1,25 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { me } from '../api/auth';
+import { useAuth } from '../store/auth';
 
-const ProtectedRoute = ({ children }) => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+export default function ProtectedRoute({ children }) {
+  const { user, loading } = useAuth();
 
-  const { isFetching, isError } = useQuery({
-    queryKey: ['auth', 'me'],
-    queryFn: me,
-    enabled: !!token,
-    retry: 1,
-    staleTime: 60_000,
-  });
-
-  if (!token) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (isFetching) {
+  if (loading) {
     return (
-      <div className="page" data-easytag="id1-react/src/components/ProtectedRoute.jsx">
-        <div className="mt-16 text-center text-brand-600" data-easytag="id2-react/src/components/ProtectedRoute.jsx">Загрузка...</div>
+      <div className="page py-20" data-easytag="id1-react/src/components/ProtectedRoute.jsx">
+        <div className="mx-auto max-w-sm text-center" data-easytag="id2-react/src/components/ProtectedRoute.jsx">
+          <div className="card" data-easytag="id3-react/src/components/ProtectedRoute.jsx">
+            <div className="animate-pulse text-sm text-brand-600" data-easytag="id4-react/src/components/ProtectedRoute.jsx">Загрузка...</div>
+          </div>
+        </div>
       </div>
     );
   }
 
-  if (isError) {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  return <>{children}</>;
-};
-
-export default ProtectedRoute;
+  return children;
+}

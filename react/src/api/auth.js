@@ -1,19 +1,19 @@
 import instance from './axios';
 
-export async function register(payload) {
-  const res = await instance.post('/api/auth/register/', payload);
-  return res.data;
-}
+// Auth API strictly per api_schema.yaml
+export const register = async (data) => {
+  // data: { username: string, password: string, email?: string }
+  const res = await instance.post('/api/auth/register/', data);
+  return res.data; // { access, refresh, user }
+};
 
-export async function login(payload) {
-  const res = await instance.post('/api/auth/login/', payload);
-  return res.data;
-}
+export const login = async (data) => {
+  // data: { username: string, password: string }
+  const res = await instance.post('/api/auth/login/', data);
+  return res.data; // { access, refresh, user }
+};
 
-export async function me() {
+export const me = async () => {
   const res = await instance.get('/api/auth/me/');
-  if (res?.data) {
-    try { localStorage.setItem('user', JSON.stringify(res.data)); } catch (e) {}
-  }
-  return res.data;
-}
+  return res.data; // user object
+};
