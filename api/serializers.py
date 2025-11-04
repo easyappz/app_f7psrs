@@ -1,5 +1,4 @@
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import User as DjangoUser
 from rest_framework import serializers
 
 from .models import ChatMessage, Profile
@@ -30,6 +29,17 @@ class RegisterSerializer(serializers.Serializer):
         user = User.objects.create_user(username=username, password=password, email=email)
         Profile.objects.create(user=user, role="user")
         return user
+
+
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=150)
+    password = serializers.CharField(write_only=True)
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ("role",)
 
 
 class UserSerializer(serializers.ModelSerializer):

@@ -5,14 +5,19 @@ User = get_user_model()
 
 
 class Profile(models.Model):
+    class Role:
+        ADMIN = "admin"
+        MODERATOR = "moderator"
+        USER = "user"
+
     ROLE_CHOICES = (
-        ("admin", "admin"),
-        ("moderator", "moderator"),
-        ("user", "user"),
+        (Role.ADMIN, "admin"),
+        (Role.MODERATOR, "moderator"),
+        (Role.USER, "user"),
     )
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
-    role = models.CharField(max_length=16, choices=ROLE_CHOICES, default="user")
+    role = models.CharField(max_length=16, choices=ROLE_CHOICES, default=Role.USER)
 
     def __str__(self) -> str:  # pragma: no cover
         return f"Profile({self.user.username}, {self.role})"
